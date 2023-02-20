@@ -13,4 +13,8 @@ The system wide `"/tmp"` was not chosen as a temporary dir, because it does not 
 
 The program uses `fzf` for the prompt, and `nvim` as an editor. It uses my other github project ![`CCC`](https://github.com/exprpapi/ccc) for compiling within my editor. You can easily adapt it to another editor. I heard `helix` is pretty great, and you could also spawn an `emacs` buffer or a `vscode` window with the command.
 
-To get started, just put the script in your `"${PATH}"`
+To get started, just put the script in your `"${PATH}"`. I mapped it to `Ctrl + t`, like so:
+```bash
+$ bind '"\C-t": "tmp_interpret\nclear\n"'   # bash
+$ bindkey -s '^t' 'tmp_interpret\nclear\n'  # zsh
+```
