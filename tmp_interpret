@@ -1,0 +1,117 @@
+#!/usr/bin/env sh
+
+# creates filename for temporary file in `${tmpdir}` with optional extension
+make_tmp_repl() {
+  local ext="$1"
+  local tmpdir="${HOME}/.local/tmp/tmp_repl/"
+  if [[ ! -d "${tmpdir}" ]]; then
+    mkdir -p "${tmpdir}"
+  fi
+  local tmpfile="$(mktemp --dry-run --tmpdir="${tmpdir}" "tmp_repl_XXXXX")"
+
+  # in case the user provides an extension, go no further
+  if [[ "${ext}" != "" ]]; then
+    tmpfile+=".${ext}"
+  else
+    local EXTS=$'py\nmd\ncc\nrs\njs\nc\ncpp\ncpp2\nkt\nscm\nrkt\nmjs\nts\ngo\nlua\nhy\nfnl\nsscm\nswift'
+    local fzf_response="$(echo "${EXTS}" | fzf --info=hidden --print-query)"
+    local fzf_input="$(echo "${fzf_response}" | head -n 1)"
+    local fzf_match="$(echo "${fzf_response}" | tail -n 1)"
+
+    # if match use fzf_match as extension
+    # if no match (one line of query came back), also use fzf_match (== fzf_input in that case)
+    # else: the user just pressed enter to get no extension, do nothing
+    if [[ "${fzf_input}" != "" ]]; then
+      # the user has searched and wants an extension
+      tmpfile+=".${fzf_match}"
+    fi
+  fi
+  echo "${tmpfile}"
+}
+
+tmp_interpret() {
+  # normally we want to insert in the end, after the last newline
+  pos(){
+    local stub="$1"
+    newlines="$(echo -n "${stub}"| wc -l | cut -d' ' -f 1)"
+    echo -n "$(( newlines + 1 ))"
+  }
+
+  # brace delimited main: adjust up by one (redundant adds not considered harmful here)
+  braced_pos() {
+    local stub="$1"
+    echo -n "$(( "$(pos "${stub}")" - 1 ))"
+  }
+
+  # two space indentation supremacy
+  local INDENT='  '
+
+  # available from C23 and C++17
+  local MAIN_PARAM='[[maybe_unused]] int argc, [[maybe_unused]] char** argv'
+
+  local C_STUB="\
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
+int main(${MAIN_PARAM}) {
+${INDENT}
+}"
+
+  local CPP_STUB="\
+#include <all.hpp>
+
+auto main(${MAIN_PARAM}) -> int {
+${INDENT}
+}"
+
+  local RS_STUB="\
+fn main() {
+${INDENT}
+}"
+
+  local PY_STUB="\
+from std import *
+
+
+"
+
+  # line number in which to insert cursor
+  local C_POS="$(braced_pos "${C_STUB}")"
+  local CPP_POS="$(braced_pos "${CPP_STUB}")"
+  local RS_POS="$(braced_pos "${RS_STUB}")"
+  local PY_POS="$(pos "${PY_STUB}")"
+
+  local ext="$1"
+  local file="$(make_tmp_repl "${ext}")"
+
+  insert_stub_and_open() {
+    local stub="$1"
+    local pos="$2"
+
+    if [[ "${stub}" != "" ]]; then
+      echo -n "${stub}" > "${file}"
+    fi
+
+    # n((vi)m) ex commands are not known for their beauty
+    local goto_pos=":${pos}"
+    local insert_at_line_end='startinsert!'
+
+    if [[ "${pos}" != "" ]]; then
+      nvim -c "${goto_pos}" -c "${insert_at_line_end}" "${file}"
+    else
+      nvim -c "${insert_at_line_end}" "${file}"
+    fi
+  }
+
+  case "${file}" in
+    *\.c) insert_stub_and_open "${C_STUB}" "${C_POS}";;
+    *\.cpp|*\.cc) insert_stub_and_open "${CPP_STUB}" "${CPP_POS}";;
+    *\.rs) insert_stub_and_open "${RS_STUB}" "${RS_POS}";;
+    *\.py) insert_stub_and_open "${PY_STUB}" "${PY_POS}";;
+    *) insert_stub_and_open ;;
+  esac
+}
+
+tmp_interpret "$1"
