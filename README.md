@@ -1,5 +1,7 @@
 # `tmp_interpret.sh`
 
+![demo](demo.gif)
+
 I like to quickly try things out or run little snippets, which is what I wrote this script for.
 
 A posix compliant shell script to instantly jump into a semi-ephemeral main function in your favorite language in your favorite editor, and start typing right away.
