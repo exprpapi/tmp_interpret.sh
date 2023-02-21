@@ -7,7 +7,7 @@ I like to quickly try things out or run little snippets, which is what I wrote t
 A posix compliant shell script to instantly jump into a semi-ephemeral main function in your favorite language in your favorite editor, and start typing right away.
 
 The script creates a temporary file in `"${HOME}/.local/tmp/tmp_repl"` based on the language you chose in the prompt.
-It inserts boilerplate code and positions the cursor at the postion you want, and starts insert mode.
+It inserts boilerplate code and positions the cursor at the position you want, and starts insert mode.
 
 The system wide `"/tmp"` was not chosen as a temporary dir, because it does not survive reboots, and that is too ephemeral, since I like to decide myself if and when to discard old repls.
 
